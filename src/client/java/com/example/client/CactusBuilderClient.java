@@ -31,8 +31,8 @@ public class CactusBuilderClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Menüdeyken veya chat açıkken tuşların tetiklenmesini engelle
-            if (client.screen != null || client.player == null || client.level == null) {
+            // Menü veya sohbet açıkken işlem yapma
+            if (client.getScreen() != null || client.player == null || client.level == null) {
                 return;
             }
 
@@ -48,15 +48,15 @@ public class CactusBuilderClient implements ClientModInitializer {
             boolean isXDown = InputConstants.isKeyDown(KEY_X);
             boolean isCDown = InputConstants.isKeyDown(KEY_C);
 
-            // Alt + Z -> İp yerleştir
+            // Alt + Z -> İp
             if (isZDown && !wasZPressed) {
                 handleSmartPlacement(client, TargetType.STRING);
             }
-            // Alt + X -> Kum yerleştir
+            // Alt + X -> Kum
             if (isXDown && !wasXPressed) {
                 handleSmartPlacement(client, TargetType.SAND);
             }
-            // Alt + C -> Kaktüs yerleştir
+            // Alt + C -> Kaktüs
             if (isCDown && !wasCPressed) {
                 handleSmartPlacement(client, TargetType.CACTUS);
             }
