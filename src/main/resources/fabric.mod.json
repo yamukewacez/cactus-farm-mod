@@ -19,7 +19,7 @@
 			"com.example.ExampleMod"
 		],
 		"client": [
-			"com.example.CactusBuilderClient"
+			"com.example.Client.CactusBuilderClient"
 		]
 	},
 	"mixins": [
