@@ -1,9 +1,8 @@
 package com.example.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,55 +17,53 @@ import net.minecraft.world.phys.HitResult;
 
 public class CactusBuilderClient implements ClientModInitializer {
 
-    // GLFW Key kodları: Z=90, X=88, C=67, Alt=342/346
+    // GLFW Tuş Kodları
     private static final int KEY_Z = 90;
     private static final int KEY_X = 88;
     private static final int KEY_C = 67;
     private static final int KEY_LEFT_ALT = 342;
     private static final int KEY_RIGHT_ALT = 346;
 
-    private static KeyMapping keyPlaceString;
-    private static KeyMapping keyPlaceSand;
-    private static KeyMapping keyPlaceCactus;
+    private static boolean wasZPressed = false;
+    private static boolean wasXPressed = false;
+    private static boolean wasCPressed = false;
 
     @Override
     public void onInitializeClient() {
-        keyPlaceString = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.cactusbuilder.string",
-                KEY_Z,
-                "category.cactusbuilder.farm"
-        ));
-
-        keyPlaceSand = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.cactusbuilder.sand",
-                KEY_X,
-                "category.cactusbuilder.farm"
-        ));
-
-        keyPlaceCactus = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.cactusbuilder.cactus",
-                KEY_C,
-                "category.cactusbuilder.farm"
-        ));
-
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.level == null) return;
+            // Menüdeyken veya chat açıkken tuşların tetiklenmesini engelle
+            if (client.screen != null || client.player == null || client.level == null) {
+                return;
+            }
 
-            long window = client.getWindow().handle();
-            boolean isAltPressed = com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, KEY_LEFT_ALT) ||
-                                  com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, KEY_RIGHT_ALT);
+            boolean isAltPressed = InputConstants.isKeyDown(KEY_LEFT_ALT) || InputConstants.isKeyDown(KEY_RIGHT_ALT);
+            if (!isAltPressed) {
+                wasZPressed = false;
+                wasXPressed = false;
+                wasCPressed = false;
+                return;
+            }
 
-            if (!isAltPressed) return;
+            boolean isZDown = InputConstants.isKeyDown(KEY_Z);
+            boolean isXDown = InputConstants.isKeyDown(KEY_X);
+            boolean isCDown = InputConstants.isKeyDown(KEY_C);
 
-            while (keyPlaceString.consumeClick()) {
+            // Alt + Z -> İp yerleştir
+            if (isZDown && !wasZPressed) {
                 handleSmartPlacement(client, TargetType.STRING);
             }
-            while (keyPlaceSand.consumeClick()) {
+            // Alt + X -> Kum yerleştir
+            if (isXDown && !wasXPressed) {
                 handleSmartPlacement(client, TargetType.SAND);
             }
-            while (keyPlaceCactus.consumeClick()) {
+            // Alt + C -> Kaktüs yerleştir
+            if (isCDown && !wasCPressed) {
                 handleSmartPlacement(client, TargetType.CACTUS);
             }
+
+            wasZPressed = isZDown;
+            wasXPressed = isXDown;
+            wasCPressed = isCDown;
         });
     }
 
