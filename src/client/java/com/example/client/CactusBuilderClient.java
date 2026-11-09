@@ -31,8 +31,7 @@ public class CactusBuilderClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Menü veya sohbet açıkken işlem yapma
-            if (client.getScreen() != null || client.player == null || client.level == null) {
+            if (client.player == null || client.level == null) {
                 return;
             }
 
