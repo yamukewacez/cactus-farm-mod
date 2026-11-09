@@ -1,68 +1,68 @@
 package com.example.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.lwjgl.glfw.GLFW;
 
 public class CactusBuilderClient implements ClientModInitializer {
 
-    private static KeyBinding keyPlaceString;
-    private static KeyBinding keyPlaceSand;
-    private static KeyBinding keyPlaceCactus;
+    private static KeyMapping keyPlaceString;
+    private static KeyMapping keyPlaceSand;
+    private static KeyMapping keyPlaceCactus;
 
     @Override
     public void onInitializeClient() {
-        keyPlaceString = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        keyPlaceString = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.string",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_Z,
                 "category.cactusbuilder.farm"
         ));
 
-        keyPlaceSand = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        keyPlaceSand = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.sand",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_X,
                 "category.cactusbuilder.farm"
         ));
 
-        keyPlaceCactus = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        keyPlaceCactus = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.cactus",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_C,
                 "category.cactusbuilder.farm"
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.world == null) return;
+            if (client.player == null || client.level == null) return;
 
-            long window = client.getWindow().getHandle();
-            boolean isAltPressed = InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_LEFT_ALT) ||
-                                  InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_RIGHT_ALT);
+            long window = client.getWindow().handle();
+            boolean isAltPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_ALT) ||
+                                  InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_ALT);
 
             if (!isAltPressed) return;
 
-            while (keyPlaceString.wasPressed()) {
+            while (keyPlaceString.consumeClick()) {
                 handleSmartPlacement(client, TargetType.STRING);
             }
-            while (keyPlaceSand.wasPressed()) {
+            while (keyPlaceSand.consumeClick()) {
                 handleSmartPlacement(client, TargetType.SAND);
             }
-            while (keyPlaceCactus.wasPressed()) {
+            while (keyPlaceCactus.consumeClick()) {
                 handleSmartPlacement(client, TargetType.CACTUS);
             }
         });
@@ -72,18 +72,18 @@ public class CactusBuilderClient implements ClientModInitializer {
         STRING, SAND, CACTUS
     }
 
-    private void handleSmartPlacement(MinecraftClient client, TargetType type) {
-        if (client.crosshairTarget == null || client.crosshairTarget.getType() != HitResult.Type.BLOCK) {
+    private void handleSmartPlacement(Minecraft client, TargetType type) {
+        if (client.hitResult == null || client.hitResult.getType() != HitResult.Type.BLOCK) {
             return;
         }
 
-        BlockHitResult hit = (BlockHitResult) client.crosshairTarget;
+        BlockHitResult hit = (BlockHitResult) client.hitResult;
         BlockPos targetPos = hit.getBlockPos();
-        Direction side = hit.getSide();
-        Block targetedBlock = client.world.getBlockState(targetPos).getBlock();
-        BlockPos placePos = targetPos.offset(side);
+        Direction side = hit.getDirection();
+        Block targetedBlock = client.level.getBlockState(targetPos).getBlock();
+        BlockPos placePos = targetPos.relative(side);
 
-        if (!client.world.getBlockState(placePos).isAir()) {
+        if (!client.level.getBlockState(placePos).isAir()) {
             return;
         }
 
@@ -98,7 +98,10 @@ public class CactusBuilderClient implements ClientModInitializer {
                 break;
 
             case SAND:
-                if (targetedBlock != Blocks.TRIPWIRE || side != Direction.UP) {
+                if (targetedBlock != Blocks.TRIPWIRE_HOOK && targetedBlock != Blocks.TRIPWIRE) {
+                    return;
+                }
+                if (side != Direction.UP) {
                     return;
                 }
                 itemToUse = Items.SAND;
@@ -118,12 +121,12 @@ public class CactusBuilderClient implements ClientModInitializer {
         executePlacement(client, hit, itemToUse);
     }
 
-    private void executePlacement(MinecraftClient client, BlockHitResult hit, Item item) {
-        PlayerInventory inv = client.player.getInventory();
+    private void executePlacement(Minecraft client, BlockHitResult hit, Item item) {
+        Inventory inv = client.player.getInventory();
         int slot = -1;
 
         for (int i = 0; i < 9; i++) {
-            if (inv.getStack(i).isOf(item)) {
+            if (inv.getItem(i).is(item)) {
                 slot = i;
                 break;
             }
@@ -131,9 +134,9 @@ public class CactusBuilderClient implements ClientModInitializer {
 
         if (slot == -1) return;
 
-        int previousSlot = inv.selectedSlot;
-        inv.selectedSlot = slot;
-        client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, hit);
-        inv.selectedSlot = previousSlot;
+        int previousSlot = inv.getSelectedSlot();
+        inv.setSelectedSlot(slot);
+        client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, hit);
+        inv.setSelectedSlot(previousSlot);
     }
 }
