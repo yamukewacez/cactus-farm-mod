@@ -1,6 +1,5 @@
 package com.example.client;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -16,9 +15,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import org.lwjgl.glfw.GLFW;
 
 public class CactusBuilderClient implements ClientModInitializer {
+
+    // GLFW Key kodları: Z=90, X=88, C=67, Alt=342/346
+    private static final int KEY_Z = 90;
+    private static final int KEY_X = 88;
+    private static final int KEY_C = 67;
+    private static final int KEY_LEFT_ALT = 342;
+    private static final int KEY_RIGHT_ALT = 346;
 
     private static KeyMapping keyPlaceString;
     private static KeyMapping keyPlaceSand;
@@ -28,22 +33,19 @@ public class CactusBuilderClient implements ClientModInitializer {
     public void onInitializeClient() {
         keyPlaceString = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.string",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_Z,
+                KEY_Z,
                 "category.cactusbuilder.farm"
         ));
 
         keyPlaceSand = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.sand",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_X,
+                KEY_X,
                 "category.cactusbuilder.farm"
         ));
 
         keyPlaceCactus = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.cactusbuilder.cactus",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_C,
+                KEY_C,
                 "category.cactusbuilder.farm"
         ));
 
@@ -51,8 +53,8 @@ public class CactusBuilderClient implements ClientModInitializer {
             if (client.player == null || client.level == null) return;
 
             long window = client.getWindow().handle();
-            boolean isAltPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_ALT) ||
-                                  InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_ALT);
+            boolean isAltPressed = com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, KEY_LEFT_ALT) ||
+                                  com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, KEY_RIGHT_ALT);
 
             if (!isAltPressed) return;
 
